@@ -1,7 +1,7 @@
 {
   "domain": "dtrelay_binary",
-  "name": "Dingtian DT-Relay (Binary)",
-  "version": "1.0.0",
+  "name": "Dingtian Binary Relay \u2013 Direct TCP/UDP Integration",
+  "version": "1.0.2",
   "documentation": "https://github.com/adres433/ha-dtrelay-binary",
   "issue_tracker": "https://github.com/adres433/ha-dtrelay-binary/issues",
   "dependencies": [],

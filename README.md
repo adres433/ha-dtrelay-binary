@@ -1,69 +1,63 @@
-# 🧠 Home Assistant – Dingtian DT-Relay Binary Integration
+# Dingtian Binary Relay – Direct TCP/UDP Integration
 
-Integracja dla płytek przekaźnikowych **Dingtian DT-Relay (DT-R002, DT-R004, DT-R008, DT-R016, DT-R032)**  
-opartych o **Dingtian Binary Protocol** i komunikujących się bezpośrednio przez **UDP lub TCP** – bez pośredników.
+## English
 
----
+**Overview**
+Dingtian Binary Relay is a Home Assistant integration providing direct TCP/UDP communication with Dingtian DT-Rxxx relay boards using the Dingtian Binary Protocol. It does **not require MQTT or a broker (Mosquitto)** — communication is peer-to-device which reduces latency and system complexity.
 
-## 🚀 Funkcje
+**Key features**
+- Direct binary TCP/UDP communication (no MQTT broker required)
+- Autodiscovery via UDP multicast
+- Multi-board support (multiple config entries)
+- Dynamic channel detection (2/4/8/16/32)
+- Lockout and pulse (momentary) options per device
+- Binary sensors for inputs and switches for outputs
 
-✅ Pełna obsługa **Dingtian Binary Protocol**  
-✅ Bezpośrednia komunikacja TCP/UDP — **bez MQTT / Mosquitto**  
-✅ Automatyczne wykrywanie urządzeń w sieci LAN (UDP multicast)  
-✅ Obsługa wielu płytek jednocześnie  
-✅ Konfiguracja przez GUI (Config Flow)  
-✅ Dynamiczne wykrywanie liczby kanałów (2, 4, 8, 16, 32)  
-✅ Opcje bezpieczeństwa:
-- **Lockout** – blokada ponownego wyzwolenia (np. 30 s)
-- **Pulse** – chwilowe załączenie przekaźnika (np. 200 ms)
-✅ Zgodność z Home Assistant OS / HACS
+**Supported devices**
+DT-R002, DT-R004, DT-R008, DT-R016, DT-R032
+(Other variants compatible if they implement Dingtian Binary Protocol.)
 
----
+**Quick start**
+1. Install integration via HACS (add repo: https://github.com/adres433/ha-dtrelay-binary)
+2. Add integration in Home Assistant settings → Devices & Services → Add integration
+3. Use Discover to find boards on LAN or configure manually (IP, ports, protocol)
 
-## ⚙️ Dlaczego bez MQTT?
-
-Ta integracja nie wymaga pośredników, takich jak **broker MQTT** czy **Mosquitto**.  
-Komunikacja odbywa się bezpośrednio między Home Assistant a płytką przekaźnikową przez gniazda UDP/TCP.
-
-**Zalety bezpośredniego połączenia:**
-- Brak opóźnień i natychmiastowa reakcja urządzeń  
-- Brak konieczności instalacji i konfiguracji dodatkowego brokera MQTT  
-- Mniejsze obciążenie systemu i prostsze wdrożenie  
-- Stabilniejsze połączenie i mniej punktów awarii  
-
-Integracja stanowi **wydajną alternatywę dla rozwiązań MQTT**, idealną dla użytkowników ceniących prostotę i szybkość działania.
+**Binary vs MQTT (comparison)**
+| Feature | Binary Integration | MQTT Integration |
+|---|---:|---:|
+| Latency | ✅ Lowest (direct) | ⚠️ Depends on broker |
+| Configuration | ✅ Simple (GUI) | ⚠️ Requires broker setup |
+| Resource usage | ✅ Low | ⚠️ Higher (broker) |
+| Complexity | ✅ Minimal | ⚠️ Additional components |
 
 ---
 
-## ⚙️ Instalacja przez HACS
+## Polski
 
-1. Skopiuj repozytorium na GitHub: https://github.com/adres433/ha-dtrelay-binary
-2. W HACS wybierz:
-   - **Integrations → Custom Repositories → Add**
-   - Wklej adres repo i wybierz kategorię *Integration*
-3. Po zainstalowaniu:
-   - Zrestartuj Home Assistant
-   - Przejdź do **Ustawienia → Urządzenia i usługi → Dodaj integrację**
-   - Wybierz **Dingtian DT-Relay (Binary)**
+**Opis**
+Dingtian Binary Relay to integracja Home Assistant zapewniająca bezpośrednią komunikację TCP/UDP z płytkami przekaźnikowymi Dingtian DT-Rxxx używając protokołu Dingtian Binary. Integracja **nie wymaga MQTT ani brokera (Mosquitto)** — komunikacja jest bezpośrednia, co zmniejsza opóźnienia i złożoność systemu.
 
----
+**Najważniejsze cechy**
+- Bezpośrednia komunikacja binarna TCP/UDP (bez brokera MQTT)
+- Autodetekcja urządzeń przez UDP multicast
+- Obsługa wielu płytek (wiele wpisów konfiguracyjnych)
+- Dynamiczne wykrywanie liczby kanałów (2/4/8/16/32)
+- Opcje lockout i pulse (chwilowe) per urządzenie
+- Binary sensor i switch dla wejść/wyjść
 
-## 🧩 Quick Start
+**Obsługiwane urządzenia**
+DT-R002, DT-R004, DT-R008, DT-R016, DT-R032
+(Inne warianty kompatybilne, jeżeli stosują Dingtian Binary Protocol.)
 
-1. Wybierz w kreatorze **Tryb “Discover”**
-2. Integracja wyśle multicast probe (`0x05AA`) do `224.0.2.11:60000`
-3. Wybierz znalezioną płytkę z listy (SN, IP, model)
+**Szybki start**
+1. Zainstaluj integrację przez HACS (repo: https://github.com/adres433/ha-dtrelay-binary)
+2. Dodaj integrację w Home Assistant: Ustawienia → Urządzenia i usługi → Dodaj integrację
+3. Użyj opcji Discover by wykryć urządzenia lub skonfiguruj ręcznie (IP, porty, protokół)
 
----
-
-## 👥 Współpraca i autorzy
-
-Projekt opracowany wspólnie z asystentem AI (ChatGPT, OpenAI) w ramach projektu badawczego konfiguracji Home Assistant.  
-Ostateczny kod, struktura i dokumentacja zostały zatwierdzone i rozwinięte przez użytkownika **adres433**.  
-Wszystkie prawa autorskie i prawa do publikacji przysługują **adres433**, kod objęty jest licencją MIT.
-
----
-
-## 🪪 Licencja
-
-MIT License © 2025 – autor: **adres433**
+**Binary vs MQTT (porównanie)**
+| Funkcja | Integracja binarna | Integracja MQTT |
+|---|---:|---:|
+| Opóźnienie | ✅ Najniższe (bezpośrednie) | ⚠️ Zależne od brokera |
+| Konfiguracja | ✅ Prosta (GUI) | ⚠️ Wymaga brokera |
+| Zużycie zasobów | ✅ Niskie | ⚠️ Wyższe (broker) |
+| Złożoność | ✅ Minimalna | ⚠️ Dodatkowe komponenty |

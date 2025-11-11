@@ -1,11 +1,9 @@
-# 🤝 Contributing
+# Contributing
 
-Dziękujemy za chęć współpracy z projektem **Dingtian DT-Relay (Binary)**.
+Thanks for your interest in contributing to Dingtian Binary Relay.
 
-Jeśli chcesz zgłosić błąd lub dodać nową funkcję:
+- Fork the repository
+- Create a feature branch
+- Make changes and open a Pull Request
 
-1. Utwórz fork repozytorium
-2. Utwórz nową gałąź (`feature/nazwa` lub `fix/nazwa`)
-3. Wprowadź zmiany i wykonaj pull request na gałąź `main`
-
-Zgłoszenia błędów: https://github.com/adres433/ha-dtrelay-binary/issues
+Issues: https://github.com/adres433/ha-dtrelay-binary/issues

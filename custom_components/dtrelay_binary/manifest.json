@@ -1,0 +1,14 @@
+{
+  "domain": "dtrelay_binary",
+  "name": "Dingtian DT-Relay (Binary)",
+  "version": "1.0.0",
+  "documentation": "https://github.com/adres433/ha-dtrelay-binary",
+  "issue_tracker": "https://github.com/adres433/ha-dtrelay-binary/issues",
+  "dependencies": [],
+  "codeowners": [
+    "@adres433"
+  ],
+  "iot_class": "local_push",
+  "integration_type": "device",
+  "requirements": []
+}

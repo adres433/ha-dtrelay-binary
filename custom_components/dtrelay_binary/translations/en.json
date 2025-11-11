@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dingtian DT-Relay Configuration",
+        "description": "Enter device IP, ports, and protocol (no MQTT required).",
+        "data": {
+          "host": "Device IP Address",
+          "protocol": "Protocol (UDP/TCP)",
+          "listen_port": "Listening Port",
+          "send_port": "Sending Port",
+          "sn": "Serial Number (SN)",
+          "lockout_seconds": "Re-trigger lockout (s)",
+          "pulse_ms": "Pulse duration (ms)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfiguracja Dingtian DT-Relay",
+        "description": "Podaj adres IP, porty i protokół (bez MQTT).",
+        "data": {
+          "host": "Adres IP urządzenia",
+          "protocol": "Protokół (UDP/TCP)",
+          "listen_port": "Port nasłuchu",
+          "send_port": "Port wysyłania",
+          "sn": "Numer seryjny (SN)",
+          "lockout_seconds": "Blokada ponownego wyzwolenia (s)",
+          "pulse_ms": "Czas trwania impulsu (ms)"
+        }
+      }
+    }
+  }
+}

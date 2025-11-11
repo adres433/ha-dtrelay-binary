@@ -1,6 +1,6 @@
 {
   "domain": "dtrelay_binary",
-  "name": "Dingtian Binary Relay \u2013 Direct TCP/UDP Integration",
+  "name": "Dingtian Binary Relay – Direct TCP/UDP Integration",
   "version": "1.0.2",
   "documentation": "https://github.com/adres433/ha-dtrelay-binary",
   "issue_tracker": "https://github.com/adres433/ha-dtrelay-binary/issues",
@@ -10,5 +10,7 @@
   ],
   "iot_class": "local_push",
   "integration_type": "device",
-  "requirements": []
+  "requirements": [],
+  "after_dependencies": [],
+  "config_flow": true
 }

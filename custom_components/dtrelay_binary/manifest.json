@@ -1,16 +1,18 @@
 {
   "domain": "dtrelay_binary",
-  "name": "Dingtian Binary Relay – Direct TCP/UDP Integration",
-  "version": "1.0.2",
+  "name": "Dingtian Relay Binary",
+  "version": "1.0.3a",
   "documentation": "https://github.com/adres433/ha-dtrelay-binary",
-  "issue_tracker": "https://github.com/adres433/ha-dtrelay-binary/issues",
-  "dependencies": [],
+  "requirements": [],
   "codeowners": [
     "@adres433"
   ],
-  "iot_class": "local_push",
-  "integration_type": "device",
-  "requirements": [],
+  "config_flow": true,
+  "iot_class": "local_poll",
+  "integration_type": "hub",
+  "icon": "mdi:triangle-outline",
+  "logo": "custom_components/dtrelay_binary/logo.png",
   "after_dependencies": [],
-  "config_flow": true
+  "issue_tracker": "https://github.com/adres433/ha-dtrelay-binary/issues",
+  "homeassistant": "2024.9.0"
 }

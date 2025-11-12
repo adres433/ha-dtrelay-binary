@@ -2,18 +2,37 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfiguracja Dingtian DT-Relay",
-        "description": "Podaj adres IP, porty i protokół (bez MQTT).",
+        "title": "Konfiguracja przekaźnika Dingtian",
+        "description": "Skonfiguruj połączenie z płytką przekaźnikową Dingtian.",
         "data": {
-          "host": "Adres IP urządzenia",
-          "protocol": "Protokół (UDP/TCP)",
-          "listen_port": "Port nasłuchu",
-          "send_port": "Port wysyłania",
-          "sn": "Numer seryjny (SN)",
-          "lockout_seconds": "Blokada ponownego wyzwolenia (s)",
-          "pulse_ms": "Czas trwania impulsu (ms)"
+          "protocol": "Protokół",
+          "ip_address": "Adres IP",
+          "port": "Port",
+          "password": "Hasło przekaźnika (Relay Password, 0~9999)",
+          "prefix": "Prefiks encji",
+          "serial_number": "Numer seryjny (5 cyfr)",
+          "auto_fill": "Wypełnij",
+          "test_connection": "Testuj połączenie",
+          "pulse_time": "Czas trwania impulsu (ms)",
+          "lockout": "Blokada ponownego wyzwolenia",
+          "language": "Język interfejsu"
+        },
+        "tooltip": {
+          "password": "Hasło przekaźnika (Relay Password) – wartość 0~9999 używana w komunikacji z płytką Dingtian.",
+          "lockout": "Jeśli włączone, po aktywowaniu przekaźnik nie może zostać ponownie wyzwolony przez 30 sekund.",
+          "pulse_time": "Określa czas (w milisekundach), przez jaki przekaźnik pozostaje aktywny po wyzwoleniu.",
+          "auto_fill": "Pobierz numer seryjny automatycznie",
+          "test_connection": "Testuj połączenie przed zapisem"
         }
       }
+    },
+    "error": {
+      "1250": "Nie udało się utworzyć gniazda UDP/TCP.",
+      "1255": "Brak połączenia – adres IP lub port nieosiągalny.",
+      "1258": "Urządzenie nie odpowiedziało w wymaganym czasie (1 s).",
+      "1260": "Niepoprawna odpowiedź z urządzenia.",
+      "1261": "Numer seryjny musi składać z 5 cyfr (0–9).",
+      "1265": "Nieznany błąd komunikacji."
     }
   }
 }

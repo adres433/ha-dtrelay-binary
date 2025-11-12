@@ -1,135 +1,258 @@
-import voluptuous as vol
-from homeassistant import config_entries
-from .const import DOMAIN, DEFAULT_LISTEN_PORT, DEFAULT_SEND_PORT, DEFAULT_SN_REQUEST_HEX, MULTICAST_ADDR, DEFAULT_LOCKOUT_SECONDS, DEFAULT_PULSE_MS
-import socket, binascii, struct
+\
+    import socket
+    import logging
+    import voluptuous as vol
+    from homeassistant import config_entries
+    from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_PASSWORD
+    from .const import DEFAULT_LOCKOUT_SECONDS, DEFAULT_PULSE_MS, DOMAIN
+    import binascii
 
-CONF_LISTEN_PORT = 'listen_port'
-CONF_SEND_PORT = 'send_port'
-CONF_PROTOCOL = 'protocol'
-CONF_SN_REQUEST_HEX = 'sn_request_hex'
-CONF_USERNAME = 'username'
-CONF_PASSWORD = 'password'
-CONF_LOCKOUT = 'lockout_seconds'
-CONF_PULSE = 'pulse_ms'
+    _LOGGER = logging.getLogger(__name__)
 
-class DTRelayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    CONF_PROTOCOL = "protocol"
+    CONF_PREFIX = "prefix"
+    CONF_SERIAL = "serial_number"
+    CONF_LANGUAGE = "language"
+    CONF_LOCKOUT = "lockout_seconds"
+    CONF_PULSE = "pulse_ms"
 
-    async def async_step_user(self, user_input=None):
-        errors = {}
-        if user_input is None:
-            return self.async_show_form(
-                step_id='user',
-                data_schema=vol.Schema({
-                    vol.Required('host', default='192.168.1.100'): str,
-                    vol.Required(CONF_LISTEN_PORT, default=DEFAULT_LISTEN_PORT): int,
-                    vol.Required(CONF_SEND_PORT, default=DEFAULT_SEND_PORT): int,
-                    vol.Required(CONF_PROTOCOL, default='UDP'): vol.In(['UDP','TCP']),
-                    vol.Optional('name', default='DTRelay'): str,
-                    vol.Optional(CONF_SN_REQUEST_HEX, default=DEFAULT_SN_REQUEST_HEX): str,
-                    vol.Optional(CONF_USERNAME, default=''): str,
-                    vol.Optional(CONF_PASSWORD, default=''): str,
-                    vol.Optional(CONF_LOCKOUT, default=DEFAULT_LOCKOUT_SECONDS): int,
-                    vol.Optional(CONF_PULSE, default=DEFAULT_PULSE_MS): int,
-                })
-            )
+    ERRORS = {
+        1250: "Unable to create UDP/TCP socket.",
+        1255: "Network unreachable – invalid IP or port.",
+        1258: "Device did not respond in time (1 s).",
+        1260: "Invalid response from device.",
+        1261: "Serial number must be 5 digits (0–9).",
+        1265: "Unknown communication error."
+    }
 
-        host = user_input.get('host')
-        listen_port = int(user_input.get(CONF_LISTEN_PORT))
-        send_port = int(user_input.get(CONF_SEND_PORT))
-        proto = user_input.get(CONF_PROTOCOL)
-        sn_hex = user_input.get(CONF_SN_REQUEST_HEX) or DEFAULT_SN_REQUEST_HEX
-        sn_probe = binascii.unhexlify(sn_hex)
-        lockout = int(user_input.get(CONF_LOCKOUT, DEFAULT_LOCKOUT_SECONDS))
-        pulse_ms = int(user_input.get(CONF_PULSE, DEFAULT_PULSE_MS))
+    class DTRelayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+        VERSION = 1
+        CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-        sn = None
-        try:
-            if proto == 'UDP':
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.settimeout(1.0)
-                s.sendto(sn_probe, (host, send_port))
-                data, _ = s.recvfrom(1024)
-                s.close()
-            else:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(1.0)
-                s.connect((host, send_port))
-                s.sendall(sn_probe)
-                data = s.recv(1024)
-                s.close()
-            txt = data.decode('utf-8', errors='ignore')
-            if 'SN' in txt.upper():
-                import re
-                m = re.search(r'SN[:=\s]*([0-9A-Za-z\-]+)', txt, re.IGNORECASE)
-                if m:
-                    sn = m.group(1)
-            if not sn and len(data) >= 34 and data[0] == 0x05:
-                sn_val = struct.unpack_from('<I', data, 2)[0]
-                sn = str(sn_val)
-        except Exception:
-            pass
+        async def async_step_user(self, user_input=None):
+            errors = {}
+            lang = "pl"
+            if user_input and CONF_LANGUAGE in user_input:
+                lang = user_input.get(CONF_LANGUAGE, "pl")
 
-        if not sn:
-            errors['base'] = 'no_sn'
-            return self.async_show_form(
-                step_id='user',
-                data_schema=vol.Schema({
-                    vol.Required('host', default=host): str,
-                    vol.Required(CONF_LISTEN_PORT, default=listen_port): int,
-                    vol.Required(CONF_SEND_PORT, default=send_port): int,
-                    vol.Required(CONF_PROTOCOL, default=proto): vol.In(['UDP','TCP']),
-                    vol.Required('serial'): str,
-                    vol.Optional('name', default=user_input.get('name','')): str,
-                    vol.Optional(CONF_SN_REQUEST_HEX, default=sn_hex): str,
-                    vol.Optional(CONF_USERNAME, default=''): str,
-                    vol.Optional(CONF_PASSWORD, default=''): str,
-                    vol.Optional(CONF_LOCKOUT, default=lockout): int,
-                    vol.Optional(CONF_PULSE, default=pulse_ms): int,
-                }),
-                errors=errors
-            )
+            # actions: fetch_sn, test_conn, submit
+            if user_input is not None and user_input.get("action") == "fetch_sn":
+                try:
+                    sn = await self._async_fetch_sn(user_input)
+                    if sn:
+                        user_input[CONF_SERIAL] = sn
+                    else:
+                        errors["base"] = "1258"
+                except DTRelayError as e:
+                    _LOGGER.error("Fetch SN error %s: sent=%s recv=%s", e.code, e.sent_hex, e.recv_hex)
+                    errors["base"] = str(e.code)
+                return await self._show_form(user_input, errors, lang)
 
-        title = f"{user_input.get('name') or 'DTRelay'}_{sn}"
-        entry_data = {
-            'host': host,
-            'listen_port': listen_port,
-            'send_port': send_port,
-            'protocol': proto,
-            'sn': sn,
-            'name': user_input.get('name') or 'DTRelay',
-            'sn_request_hex': sn_hex,
-            'username': user_input.get(CONF_USERNAME,'') or None,
-            'password': user_input.get(CONF_PASSWORD,'') or None,
-            'lockout_seconds': lockout,
-            'pulse_ms': pulse_ms,
-        }
-        return self.async_create_entry(title=title, data=entry_data)
+            if user_input is not None and user_input.get("action") == "test_conn":
+                try:
+                    ok = await self._async_test_connection(user_input)
+                    if ok:
+                        user_input["_test_ok"] = True
+                    else:
+                        errors["base"] = "1258"
+                except DTRelayError as e:
+                    _LOGGER.error("Test connection error %s: sent=%s recv=%s", e.code, e.sent_hex, e.recv_hex)
+                    errors["base"] = str(e.code)
+                return await self._show_form(user_input, errors, lang)
 
-    async def async_step_discover(self, user_input=None):
-        from .helpers import discover_devices_multicast
-        await self.async_set_unique_id('dtrelay_discovery')
-        if user_input is None:
-            results = await discover_devices_multicast(DEFAULT_SN_REQUEST_HEX, timeout=2.0, multicast_addr=MULTICAST_ADDR, port=DEFAULT_SEND_PORT)
-            if not results:
-                return self.async_show_form(step_id='discover', description_placeholders={'count': 0}, data_schema=vol.Schema({}), errors={'base':'no_devices'})
-            choices = {str(i): f"SN {r['sn']} @ {r.get('ip')} (model {r.get('model')})" for i, r in enumerate(results)}
-            self._discover_results = results
-            return self.async_show_form(step_id='discover', data_schema=vol.Schema({vol.Required('choice'): vol.In(choices)}))
-        idx = int(user_input.get('choice'))
-        picked = self._discover_results[idx]
-        title = f"DTRelay_{picked['sn']}"
-        entry_data = {
-            'host': picked.get('ip'),
-            'listen_port': DEFAULT_LISTEN_PORT,
-            'send_port': DEFAULT_SEND_PORT,
-            'protocol': 'UDP',
-            'sn': picked.get('sn'),
-            'name': title,
-            'sn_request_hex': DEFAULT_SN_REQUEST_HEX,
-            'username': None,
-            'password': None,
-            'lockout_seconds': DEFAULT_LOCKOUT_SECONDS,
-            'pulse_ms': DEFAULT_PULSE_MS,
-        }
-        return self.async_create_entry(title=title, data=entry_data)
+            if user_input is not None and user_input.get("action") == "submit":
+                sn = user_input.get(CONF_SERIAL, "").strip()
+                prefix = user_input.get(CONF_PREFIX, "DTRelay")[:10]
+                if not sn or not sn.isdigit() or len(sn) != 5:
+                    errors["base"] = "1261"
+                    return await self._show_form(user_input, errors, lang)
+                data = {
+                    "protocol": user_input.get(CONF_PROTOCOL, "UDP"),
+                    "host": user_input.get(CONF_IP_ADDRESS),
+                    "listen_port": int(user_input.get(CONF_PORT)),
+                    "send_port": int(user_input.get(CONF_PORT)),
+                    "sn": sn,
+                    "name": prefix,
+                    "password": user_input.get(CONF_PASSWORD),
+                    "lockout_seconds": int(user_input.get(CONF_LOCKOUT, DEFAULT_LOCKOUT_SECONDS)),
+                    "pulse_ms": int(user_input.get(CONF_PULSE, DEFAULT_PULSE_MS)),
+                    "language": lang,
+                }
+                title = f"{prefix}_{sn}"
+                return self.async_create_entry(title=title, data=data)
+
+            return await self._show_form(user_input, errors, lang)
+
+        async def _show_form(self, user_input=None, errors=None, lang="pl"):
+            errors = errors or {}
+            defaults = {
+                CONF_PROTOCOL: "UDP",
+                CONF_IP_ADDRESS: "192.168.1.100",
+                CONF_PORT: 60000,
+                CONF_PASSWORD: "admin",
+                CONF_PREFIX: "DTRelay",
+                CONF_SERIAL: "",
+                CONF_LOCKOUT: DEFAULT_LOCKOUT_SECONDS,
+                CONF_PULSE: DEFAULT_PULSE_MS,
+                CONF_LANGUAGE: lang,
+            }
+            if user_input:
+                defaults.update(user_input)
+
+            data_schema = vol.Schema({
+                vol.Required(CONF_PROTOCOL, default=defaults[CONF_PROTOCOL]): vol.In(["UDP","TCP"]),
+                vol.Required(CONF_IP_ADDRESS, default=defaults[CONF_IP_ADDRESS]): str,
+                vol.Required(CONF_PORT, default=defaults[CONF_PORT]): int,
+                vol.Required(CONF_PASSWORD, default=defaults[CONF_PASSWORD]): str,
+                vol.Required(CONF_PREFIX, default=defaults[CONF_PREFIX]): str,
+                vol.Required(CONF_SERIAL, default=defaults[CONF_SERIAL]): str,
+                vol.Optional(CONF_LOCKOUT, default=defaults[CONF_LOCKOUT]): int,
+                vol.Optional(CONF_PULSE, default=defaults[CONF_PULSE]): int,
+                vol.Optional(CONF_LANGUAGE, default=defaults[CONF_LANGUAGE]): vol.In(["pl","en"]),
+                vol.Optional("action", default=""): str,
+            })
+
+            return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors, description_placeholders={})
+
+        async def _async_fetch_sn(self, user_input):
+            ip = user_input.get(CONF_IP_ADDRESS)
+            port = int(user_input.get(CONF_PORT))
+            proto = user_input.get(CONF_PROTOCOL, "UDP").upper()
+
+            try:
+                if proto == "TCP":
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1.0)
+                    res = s.connect_ex((ip, port))
+                    s.close()
+                    if res != 0:
+                        raise DTRelayError(1255, sent_hex="", recv_hex="")
+                else:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.settimeout(1.0)
+                    try:
+                        s.sendto(b"", (ip, port))
+                    except OSError:
+                        s.close()
+                        raise DTRelayError(1255, sent_hex="", recv_hex="")
+                    s.close()
+            except DTRelayError:
+                raise
+            except Exception:
+                raise DTRelayError(1250, sent_hex="", recv_hex="")
+
+            frame = bytes([0x05]) + bytes(33)
+            sent_hex = binascii.hexlify(frame).decode()
+
+            try:
+                if proto == "UDP":
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock.settimeout(1.0)
+                    sock.sendto(frame, (ip, port))
+                    try:
+                        data, addr = sock.recvfrom(512)
+                    except socket.timeout:
+                        sock.close()
+                        raise DTRelayError(1258, sent_hex=sent_hex, recv_hex="")
+                    sock.close()
+                else:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1.0)
+                    sock.connect((ip, port))
+                    sock.sendall(frame)
+                    try:
+                        data = sock.recv(512)
+                    except socket.timeout:
+                        sock.close()
+                        raise DTRelayError(1258, sent_hex=sent_hex, recv_hex="")
+                    sock.close()
+
+                recv_hex = binascii.hexlify(data).decode()
+                _LOGGER.debug("FIND response raw: %s", recv_hex)
+                if len(data) >= 6 and data[0] == 0x05:
+                    sn = int.from_bytes(data[2:6], "little")
+                    return str(sn)
+                else:
+                    raise DTRelayError(1260, sent_hex=sent_hex, recv_hex=recv_hex)
+            except DTRelayError:
+                raise
+            except Exception:
+                raise DTRelayError(1265, sent_hex=sent_hex, recv_hex="")
+
+        async def _async_test_connection(self, user_input):
+            ip = user_input.get(CONF_IP_ADDRESS)
+            port = int(user_input.get(CONF_PORT))
+            proto = user_input.get(CONF_PROTOCOL, "UDP").upper()
+            pwd = user_input.get(CONF_PASSWORD, "admin")
+
+            frame = bytearray()
+            frame.append(0xFF)
+            frame.append(0x00 ^ 0xAA)
+            frame.append(0x00)
+            frame.append(0x00)
+            frame.append(0x00)
+            frame.append(0x00)
+            sent_hex = binascii.hexlify(bytes(frame)).decode()
+
+            try:
+                if proto == "TCP":
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1.0)
+                    res = s.connect_ex((ip, port))
+                    s.close()
+                    if res != 0:
+                        raise DTRelayError(1255, sent_hex=sent_hex, recv_hex="")
+                else:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.settimeout(1.0)
+                    try:
+                        s.sendto(b"", (ip, port))
+                    except OSError:
+                        s.close()
+                        raise DTRelayError(1255, sent_hex=sent_hex, recv_hex="")
+                    s.close()
+            except DTRelayError:
+                raise
+            except Exception:
+                raise DTRelayError(1250, sent_hex=sent_hex, recv_hex="")
+
+            try:
+                if proto == "UDP":
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock.settimeout(1.0)
+                    sock.sendto(bytes(frame), (ip, port))
+                    try:
+                        data, addr = sock.recvfrom(512)
+                    except socket.timeout:
+                        sock.close()
+                        raise DTRelayError(1258, sent_hex=sent_hex, recv_hex="")
+                    sock.close()
+                else:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1.0)
+                    sock.connect((ip, port))
+                    sock.sendall(bytes(frame))
+                    try:
+                        data = sock.recv(512)
+                    except socket.timeout:
+                        sock.close()
+                        raise DTRelayError(1258, sent_hex=sent_hex, recv_hex="")
+                    sock.close()
+
+                recv_hex = binascii.hexlify(data).decode()
+                _LOGGER.debug("TEST response raw: %s", recv_hex)
+                if data and len(data) >= 4:
+                    return True
+                else:
+                    raise DTRelayError(1260, sent_hex=sent_hex, recv_hex=recv_hex)
+            except DTRelayError:
+                raise
+            except Exception:
+                raise DTRelayError(1265, sent_hex=sent_hex, recv_hex="")
+
+    class DTRelayError(Exception):
+        def __init__(self, code, sent_hex="", recv_hex=""):
+            self.code = code
+            self.sent_hex = sent_hex
+            self.recv_hex = recv_hex
+            super().__init__(f"Error {code}")

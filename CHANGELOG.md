@@ -1,14 +1,20 @@
-# CHANGELOG
+# Changelog
 
-## [1.0.2] – 2025-11-11
+## v1.0.3 (QA)
+- GUI + Test connection + Translations update
+- Added 'Fill' (fetch SN) and 'Test' (read-status probe) in config flow
+- Validated translations (PL/EN) and added tooltip descriptions
+- Added new red triangle logo and fixed HACS icon visibility
+- Included QA validation report (VALIDATION_REPORT_v1.0.3.md)
+- SHA256 checksum included in release assets
 
-### Summary
-- Final release v1.0.2: full repository including integration source code and repository metadata ready for GitHub/HACS.
-- Bilingual documentation (EN/PL) and marketing copy highlighting direct TCP/UDP communication (no MQTT required).
-- Added icon and branding: Dingtian Binary Relay – Direct TCP/UDP Integration.
+SHA256 checksum: b482b43fd84a6c1b1fefdd4c91f8c36b6b36b9da55b0c2a967e02f38b7e79a0b
 
-## [1.0.1] – 2025-11-09
-- Initial integration code reconstructed (parser, UDP/TCP handlers, config flow, platforms).
 
-## [1.0.0] – 2025-11-09
-- First public release (base features & parser).
+
+## v1.0.3a (QA Patch)
+- Added troubleshooting section to README
+- Added issue tracker and after_dependencies to manifest.json
+- Extracted error codes to errors.py
+- Added tooltips and translations for 'Fill' and 'Test connection'
+- Added two basic config_flow tests

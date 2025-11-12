@@ -2,18 +2,37 @@
   "config": {
     "step": {
       "user": {
-        "title": "Dingtian DT-Relay Configuration",
-        "description": "Enter device IP, ports, and protocol (no MQTT required).",
+        "title": "Dingtian Relay Configuration",
+        "description": "Configure your Dingtian Relay board connection.",
         "data": {
-          "host": "Device IP Address",
-          "protocol": "Protocol (UDP/TCP)",
-          "listen_port": "Listening Port",
-          "send_port": "Sending Port",
-          "sn": "Serial Number (SN)",
-          "lockout_seconds": "Re-trigger lockout (s)",
-          "pulse_ms": "Pulse duration (ms)"
+          "protocol": "Protocol",
+          "ip_address": "IP address",
+          "port": "Port",
+          "password": "Relay Password (0~9999)",
+          "prefix": "Entity prefix",
+          "serial_number": "Serial number (5 digits)",
+          "auto_fill": "Fill",
+          "test_connection": "Test connection",
+          "pulse_time": "Pulse duration (ms)",
+          "lockout": "Reactivation lock",
+          "language": "Interface language"
+        },
+        "tooltip": {
+          "password": "Relay Password (0~9999) used for Dingtian communication.",
+          "lockout": "If enabled, once triggered, the relay cannot be reactivated again for 30 seconds.",
+          "pulse_time": "Defines how long (in ms) the relay remains active after triggering.",
+          "auto_fill": "Fetch SN automatically",
+          "test_connection": "Test connection before saving"
         }
       }
+    },
+    "error": {
+      "1250": "Unable to create UDP/TCP socket.",
+      "1255": "Network unreachable – invalid IP or port.",
+      "1258": "Device did not respond in time (1 s).",
+      "1260": "Invalid response from device.",
+      "1261": "Serial number must be 5 digits (0–9).",
+      "1265": "Unknown communication error."
     }
   }
 }
